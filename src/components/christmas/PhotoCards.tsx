@@ -1,9 +1,7 @@
 import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import gsap from 'gsap';
 import { TreeState, PhotoCard } from '@/types/christmas';
-import { RoundedBox } from '@react-three/drei';
 
 // Generate local placeholder images (avoid external CDN for China users)
 const generatePlaceholder = (index: number): string => {
@@ -83,6 +81,14 @@ function generateGalaxyPhotoPosition(): [number, number, number] {
   ];
 }
 
+// Spring physics system for smooth, inertia-based animations
+interface SpringState {
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  scale: number;
+  scaleVelocity: number;
+}
+
 function PhotoCardMesh({ 
   url, 
   treePosition, 
@@ -102,6 +108,20 @@ function PhotoCardMesh({
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const { camera } = useThree();
   const timeRef = useRef(Math.random() * Math.PI * 2);
+  
+  // Spring physics state
+  const springRef = useRef<SpringState>({
+    position: new THREE.Vector3(...treePosition),
+    velocity: new THREE.Vector3(0, 0, 0),
+    scale: 0.4,
+    scaleVelocity: 0,
+  });
+  
+  // Spring physics constants - tuned for smooth, natural motion
+  const SPRING_STIFFNESS = 80;    // How snappy the spring is
+  const SPRING_DAMPING = 12;      // How quickly it settles (critical damping ~= 2*sqrt(stiffness))
+  const SCALE_STIFFNESS = 100;
+  const SCALE_DAMPING = 15;
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
@@ -109,17 +129,15 @@ function PhotoCardMesh({
     loader.load(
       url,
       (tex) => {
-        // High quality texture settings
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
-        tex.anisotropy = 16; // Better quality at angles
+        tex.anisotropy = 16;
         tex.generateMipmaps = true;
         tex.colorSpace = THREE.SRGBColorSpace;
         setTexture(tex);
       },
       undefined,
       () => {
-        // On error, create a colored placeholder
         const canvas = document.createElement('canvas');
         canvas.width = 400;
         canvas.height = 400;
@@ -141,52 +159,54 @@ function PhotoCardMesh({
     );
   }, [url, index]);
 
-  useEffect(() => {
-    if (!meshRef.current) return;
-
-    const targetPos = isFocused 
-      ? [0, 0, 0.8]  // 更近的位置
-      : state === 'tree' 
-        ? treePosition 
-        : galaxyPosition;
-
-    const targetScale = isFocused ? 5 : 0.4;  // 更大的缩放
-
-    // 使用更丝滑的动画设置
-    gsap.killTweensOf(meshRef.current.position);
-    gsap.killTweensOf(meshRef.current.scale);
-
-    gsap.to(meshRef.current.position, {
-      x: targetPos[0],
-      y: targetPos[1],
-      z: targetPos[2],
-      duration: isFocused ? 0.6 : 0.8,
-      ease: 'power3.out',  // 更自然的缓动
-      overwrite: true,
-    });
-
-    gsap.to(meshRef.current.scale, {
-      x: targetScale,
-      y: targetScale,
-      z: 1,
-      duration: isFocused ? 0.5 : 0.7,
-      ease: 'back.out(1.2)',  // 带轻微弹性的缓动
-      overwrite: true,
-    });
-  }, [state, isFocused, treePosition, galaxyPosition]);
-
   useFrame((_, delta) => {
     if (!meshRef.current) return;
     
-    timeRef.current += delta;
+    const spring = springRef.current;
+    const dt = Math.min(delta, 0.033); // Cap delta to prevent instability
+    
+    timeRef.current += dt;
+    
+    // Calculate target position based on state
+    const targetPos = isFocused 
+      ? new THREE.Vector3(0, 0, 0.8)
+      : state === 'tree' 
+        ? new THREE.Vector3(...treePosition)
+        : new THREE.Vector3(...galaxyPosition);
+    
+    const targetScale = isFocused ? 5 : 0.4;
+    
+    // Spring physics for position (F = -k*x - d*v)
+    const displacement = new THREE.Vector3().subVectors(spring.position, targetPos);
+    const springForce = displacement.clone().multiplyScalar(-SPRING_STIFFNESS);
+    const dampingForce = spring.velocity.clone().multiplyScalar(-SPRING_DAMPING);
+    const acceleration = springForce.add(dampingForce);
+    
+    // Update velocity and position using semi-implicit Euler
+    spring.velocity.add(acceleration.multiplyScalar(dt));
+    spring.position.add(spring.velocity.clone().multiplyScalar(dt));
+    
+    // Spring physics for scale
+    const scaleDisplacement = spring.scale - targetScale;
+    const scaleSpringForce = -SCALE_STIFFNESS * scaleDisplacement;
+    const scaleDampingForce = -SCALE_DAMPING * spring.scaleVelocity;
+    const scaleAcceleration = scaleSpringForce + scaleDampingForce;
+    
+    spring.scaleVelocity += scaleAcceleration * dt;
+    spring.scale += spring.scaleVelocity * dt;
+    
+    // Apply to mesh
+    meshRef.current.position.copy(spring.position);
+    
+    // Add subtle floating motion when not focused
+    if (!isFocused) {
+      meshRef.current.position.y += Math.sin(timeRef.current * 0.5) * 0.005;
+    }
+    
+    meshRef.current.scale.set(spring.scale, spring.scale, 1);
     
     // Make card face camera
     meshRef.current.lookAt(camera.position);
-    
-    // Add subtle floating motion
-    if (!isFocused) {
-      meshRef.current.position.y += Math.sin(timeRef.current * 0.5) * 0.001;
-    }
   });
 
   // 拍立得卡片尺寸 (模拟 Instax Mini 比例)
