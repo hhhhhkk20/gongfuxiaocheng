@@ -309,7 +309,7 @@ export function GemOrnaments({ state }: { state: TreeState }) {
         treePosition: generateOrnamentPosition(i, cubeCount),
         galaxyPosition: generateGalaxyPosition(),
         color: new THREE.Color().setHSL(hue, hue > 0 ? 0.4 : 0, 0.85 + Math.random() * 0.15),
-        scale: 0.08 + Math.random() * 0.06,
+        scale: 0.05 + Math.random() * 0.04,
         rotSpeed: 0.3 + Math.random() * 0.5,
         delay: Math.random(),
       };
@@ -323,7 +323,7 @@ export function GemOrnaments({ state }: { state: TreeState }) {
         treePosition: generateOrnamentPosition(i + cubeCount, icoCount + cubeCount),
         galaxyPosition: generateGalaxyPosition(),
         color: new THREE.Color().setHSL(hue, hue > 0 ? 0.5 : 0, 0.8 + Math.random() * 0.2),
-        scale: 0.1 + Math.random() * 0.08,
+        scale: 0.06 + Math.random() * 0.05,
         rotSpeed: 0.2 + Math.random() * 0.4,
         delay: Math.random(),
       };
