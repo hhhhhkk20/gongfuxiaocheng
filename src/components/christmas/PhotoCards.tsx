@@ -78,7 +78,7 @@ function PhotoCardMesh({
   isFocused: boolean;
   index: number;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const { camera } = useThree();
   const timeRef = useRef(Math.random() * Math.PI * 2);
@@ -169,38 +169,55 @@ function PhotoCardMesh({
     }
   });
 
-  // 创建圆角矩形几何体
-  const roundedRectGeometry = useMemo(() => {
-    const width = 1;
-    const height = 1;
-    const radius = 0.07; // 圆角半径
-    
+  // 拍立得卡片尺寸 (模拟 Instax Mini 比例)
+  const cardWidth = 1;
+  const cardHeight = 1.25; // 拍立得比例更高
+  const photoWidth = 0.85;
+  const photoHeight = 0.75;
+  const borderRadius = 0.03;
+  const photoOffsetY = 0.12; // 照片向上偏移，底部留白更大
+
+  // 创建拍立得卡片背景几何体
+  const cardGeometry = useMemo(() => {
     const shape = new THREE.Shape();
-    shape.moveTo(-width/2 + radius, -height/2);
-    shape.lineTo(width/2 - radius, -height/2);
-    shape.quadraticCurveTo(width/2, -height/2, width/2, -height/2 + radius);
-    shape.lineTo(width/2, height/2 - radius);
-    shape.quadraticCurveTo(width/2, height/2, width/2 - radius, height/2);
-    shape.lineTo(-width/2 + radius, height/2);
-    shape.quadraticCurveTo(-width/2, height/2, -width/2, height/2 - radius);
-    shape.lineTo(-width/2, -height/2 + radius);
-    shape.quadraticCurveTo(-width/2, -height/2, -width/2 + radius, -height/2);
-    
-    const geometry = new THREE.ShapeGeometry(shape);
-    return geometry;
+    shape.moveTo(-cardWidth/2 + borderRadius, -cardHeight/2);
+    shape.lineTo(cardWidth/2 - borderRadius, -cardHeight/2);
+    shape.quadraticCurveTo(cardWidth/2, -cardHeight/2, cardWidth/2, -cardHeight/2 + borderRadius);
+    shape.lineTo(cardWidth/2, cardHeight/2 - borderRadius);
+    shape.quadraticCurveTo(cardWidth/2, cardHeight/2, cardWidth/2 - borderRadius, cardHeight/2);
+    shape.lineTo(-cardWidth/2 + borderRadius, cardHeight/2);
+    shape.quadraticCurveTo(-cardWidth/2, cardHeight/2, -cardWidth/2, cardHeight/2 - borderRadius);
+    shape.lineTo(-cardWidth/2, -cardHeight/2 + borderRadius);
+    shape.quadraticCurveTo(-cardWidth/2, -cardHeight/2, -cardWidth/2 + borderRadius, -cardHeight/2);
+    return new THREE.ShapeGeometry(shape);
+  }, []);
+
+  // 创建照片区域几何体
+  const photoGeometry = useMemo(() => {
+    return new THREE.PlaneGeometry(photoWidth, photoHeight);
   }, []);
 
   if (!texture) return null;
 
   return (
-    <mesh ref={meshRef} position={treePosition} scale={[0.5, 0.5, 1]} geometry={roundedRectGeometry}>
-      <meshBasicMaterial 
-        map={texture} 
-        side={THREE.DoubleSide}
-        transparent={false}
-        toneMapped={false}
-      />
-    </mesh>
+    <group ref={meshRef} position={treePosition} scale={[0.5, 0.5, 1]}>
+      {/* 拍立得白色卡片背景 */}
+      <mesh geometry={cardGeometry}>
+        <meshBasicMaterial 
+          color="#f5f5f0"
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* 照片 */}
+      <mesh geometry={photoGeometry} position={[0, photoOffsetY, 0.001]}>
+        <meshBasicMaterial 
+          map={texture} 
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
