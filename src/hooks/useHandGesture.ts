@@ -160,10 +160,9 @@ export function useHandGesture({ enabled, onGestureChange }: UseHandGestureOptio
           });
         };
 
-        // Try multiple CDN sources with China-friendly options first
+        // Use jsdelivr as primary source - most reliable for MediaPipe model files
+        // China CDNs don't have proper MediaPipe WASM/tflite files
         const cdnSources = [
-          'https://cdn.bootcdn.net/ajax/libs/mediapipe/0.4.1675469240/hands.min.js', // China CDN (bootcdn)
-          'https://cdn.staticfile.org/mediapipe/0.4.1675469240/hands.min.js', // China CDN (staticfile)
           'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js',
           'https://unpkg.com/@mediapipe/hands/hands.js',
         ];
@@ -173,7 +172,7 @@ export function useHandGesture({ enabled, onGestureChange }: UseHandGestureOptio
           if (!mounted) return;
           try {
             console.log('[Gesture] Trying CDN:', src);
-            await loadScript(src, 8000);
+            await loadScript(src, 15000); // Longer timeout for slower connections
             loaded = true;
             console.log('[Gesture] Successfully loaded from:', src);
             break;
@@ -206,11 +205,17 @@ export function useHandGesture({ enabled, onGestureChange }: UseHandGestureOptio
 
         // Use more relaxed constraints for Android compatibility
         const isAndroid = /Android/i.test(navigator.userAgent);
-        console.log('[Gesture] Is Android:', isAndroid);
+        const isChrome = /Chrome/i.test(navigator.userAgent);
+        console.log('[Gesture] Is Android:', isAndroid, 'Is Chrome:', isChrome);
         
+        // Android needs simpler constraints and lower resolution
         const constraints = {
           video: isAndroid 
-            ? { facingMode: 'user' } // Simpler constraints for Android
+            ? { 
+                facingMode: 'user',
+                width: { ideal: 320 },
+                height: { ideal: 240 }
+              }
             : { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
         };
         
@@ -254,9 +259,10 @@ export function useHandGesture({ enabled, onGestureChange }: UseHandGestureOptio
           throw new Error('Video playback failed: ' + (playError as Error).message);
         }
         
-        // Wait for video to have actual dimensions
+        // Wait for video to have actual dimensions - longer wait for Android
         let retries = 0;
-        while ((video.videoWidth === 0 || video.videoHeight === 0) && retries < 30) {
+        const maxRetries = isAndroid ? 50 : 30;
+        while ((video.videoWidth === 0 || video.videoHeight === 0) && retries < maxRetries) {
           await new Promise(r => setTimeout(r, 100));
           retries++;
         }
@@ -264,21 +270,27 @@ export function useHandGesture({ enabled, onGestureChange }: UseHandGestureOptio
         setStatus('initializing-hands');
         console.log('[Gesture] Video playing, dimensions:', video.videoWidth, 'x', video.videoHeight, 'readyState:', video.readyState);
 
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          console.error('[Gesture] Video dimensions still 0 after waiting');
+          throw new Error('Video stream has no dimensions');
+        }
+
         // Initialize Hands - use jsdelivr as primary (most reliable for mediapipe)
-        // China users may be slower but it should still work
         const modelCdnBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands';
         
         const hands = new Hands({
           locateFile: (file: string) => {
+            console.log('[Gesture] Loading model file:', file);
             return `${modelCdnBase}/${file}`;
           },
         });
 
+        // Use lower complexity on Android for better performance
         hands.setOptions({
           maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.5,
-          minTrackingConfidence: 0.3,
+          modelComplexity: isAndroid ? 0 : 1, // Use lite model on Android
+          minDetectionConfidence: isAndroid ? 0.6 : 0.5,
+          minTrackingConfidence: isAndroid ? 0.4 : 0.3,
         });
 
         hands.onResults(onResults);
