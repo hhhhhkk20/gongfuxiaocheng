@@ -42,7 +42,7 @@ const generatePlaceholder = (index: number): string => {
 let cachedPlaceholders: string[] | null = null;
 const getDefaultPhotos = (): string[] => {
   if (!cachedPlaceholders) {
-    cachedPlaceholders = Array.from({ length: 20 }, (_, i) => generatePlaceholder(i));
+    cachedPlaceholders = Array.from({ length: 12 }, (_, i) => generatePlaceholder(i));
   }
   return cachedPlaceholders;
 };
@@ -267,9 +267,9 @@ export function PhotoCards({ state, photos, focusedIndex, onFocusChange }: Photo
   const photoUrls = photos && photos.length > 0 ? photos : getDefaultPhotos();
   
   const photoData = useMemo(() => {
-    return photoUrls.slice(0, 20).map((url, i) => ({
+    return photoUrls.slice(0, 12).map((url, i) => ({
       url,
-      treePosition: generateTreePhotoPosition(i, Math.min(photoUrls.length, 20)),
+      treePosition: generateTreePhotoPosition(i, Math.min(photoUrls.length, 12)),
       galaxyPosition: generateGalaxyPhotoPosition(),
     }));
   }, [photoUrls]);
