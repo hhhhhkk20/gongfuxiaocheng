@@ -52,9 +52,8 @@ export function CustomTextOverlay({ isVisible, text, onTextChange }: CustomTextO
           }}
         >
           <h1 
-            className="text-2xl md:text-3xl lg:text-4xl font-bold text-transparent drop-shadow-2xl"
+            className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-200 via-white to-blue-100 bg-clip-text text-transparent"
             style={{
-              WebkitTextStroke: '1px rgba(255, 215, 0, 0.8)',
               fontFamily: "'Playfair Display', serif",
             }}
           >
@@ -63,13 +62,13 @@ export function CustomTextOverlay({ isVisible, text, onTextChange }: CustomTextO
         </div>
       </div>
 
-      {/* Edit button in bottom right */}
+      {/* Edit button in bottom right - moved up */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
             size="icon"
-            className="fixed bottom-4 right-4 z-30 glass border-white/20 hover:bg-white/10 text-foreground"
+            className="fixed bottom-8 right-4 z-30 glass border-white/20 hover:bg-white/10 text-foreground"
           >
             <Edit3 className="h-4 w-4" />
           </Button>
