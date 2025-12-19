@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { ParticleSystem, GiftBoxes, GemOrnaments, TetrahedronSpiral } from './ParticleSystem';
 import { PhotoCards } from './PhotoCards';
 import { TreeStar } from './TreeStar';
+import { SnowEffect } from './SnowEffect';
 import { TreeState } from '@/types/christmas';
 
 interface SceneContentProps {
@@ -206,6 +207,9 @@ function SceneContent({
       
       {/* Tree star topper */}
       <TreeStar state={state} isFocused={isStarFocused} />
+      
+      {/* Snow effect - activates when star is focused */}
+      <SnowEffect active={isStarFocused} />
       
       {/* Post-processing effects - enhanced glow */}
       <EffectComposer>
