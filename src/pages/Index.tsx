@@ -10,7 +10,6 @@ import { useHandGesture } from '@/hooks/useHandGesture';
 import { useMouseFallback } from '@/hooks/useMouseFallback';
 import { useChristmasAudio } from '@/hooks/useChristmasAudio';
 import { TreeState, GestureType } from '@/types/christmas';
-import { Github } from 'lucide-react';
 
 // Lazy load heavy 3D scene
 const ChristmasScene = lazy(() => import('@/components/christmas/Scene').then(m => ({ default: m.ChristmasScene })));
@@ -190,20 +189,6 @@ const Index = () => {
           {showInstructions && (
             <InstructionsOverlay onDismiss={handleDismissInstructions} />
           )}
-
-          {/* State indicator & GitHub link */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-         
-            <a
-              href="https://github.com/zebo101/christmas-tree"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass rounded-full p-2 text-muted-foreground hover:text-foreground transition-colors"
-              title="View on GitHub"
-            >
-              <Github className="w-5 h-5" />
-            </a>
-          </div>
 
           {/* Custom text overlay and edit button */}
           <CustomTextOverlay

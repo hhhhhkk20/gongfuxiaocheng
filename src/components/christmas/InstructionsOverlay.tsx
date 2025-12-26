@@ -38,7 +38,7 @@ export function InstructionsOverlay({ onDismiss }: InstructionsOverlayProps) {
         </Button>
 
         <h2 className="text-2xl font-display font-bold text-christmas-gold mb-6 text-center">
-          🎄 欢迎来到魔法圣诞树
+          Hi，海苔碎@Nico
         </h2>
 
         <div className="space-y-4">
