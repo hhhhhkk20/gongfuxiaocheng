@@ -50,7 +50,7 @@ export function GestureIndicator({
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm font-medium text-muted-foreground">
-              {cameraPermission === 'requesting' ? '请在弹窗中允许摄像头...' : '👆 点击启用手势控制'}
+              {cameraPermission === 'requesting' ? '请在弹窗中允许摄像头...' : '👆 点一哈这点，要你呢摄像头'}
             </span>
             <span className="text-xs text-muted-foreground">
               {cameraPermission === 'requesting' ? '等待浏览器权限' : '需要摄像头权限'}

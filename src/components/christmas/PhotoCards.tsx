@@ -39,7 +39,13 @@ const generatePlaceholder = (index: number): string => {
 let cachedPlaceholders: string[] | null = null;
 const getDefaultPhotos = (): string[] => {
   if (!cachedPlaceholders) {
-    cachedPlaceholders = Array.from({ length: 12 }, (_, i) => generatePlaceholder(i));
+    // 使用用户提供的真实照片和生成的占位符
+    const userPhotos = [
+      '/images/photo1.jpg',  // 狐狸图片
+      '/images/photo2.jpg',  // 三人合照
+    ];
+    const remainingPlaceholders = Array.from({ length: 10 }, (_, i) => generatePlaceholder(i));
+    cachedPlaceholders = [...userPhotos, ...remainingPlaceholders];
   }
   return cachedPlaceholders;
 };
